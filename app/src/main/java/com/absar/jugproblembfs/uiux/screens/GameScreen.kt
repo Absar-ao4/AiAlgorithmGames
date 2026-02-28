@@ -189,6 +189,34 @@ fun GameScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
+            Button(
+                onClick = { viewModel.showHint() },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("💡 Get Hint")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            viewModel.hintMessage?.let {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF37474F)
+                    ),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        text = it,
+                        modifier = Modifier.padding(16.dp),
+                        color = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             // 🔥 NEW LEVEL NAVIGATION ROW
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -20,6 +20,9 @@ class WaterJugViewModel : ViewModel() {
     var gameState by mutableStateOf<GameState?>(null)
         private set
 
+    var hintMessage by mutableStateOf<String?>(null)
+        private set
+
     // ----------------------
     // SETUP
     // ----------------------
@@ -30,6 +33,12 @@ class WaterJugViewModel : ViewModel() {
         currentLevelIndex = 0
     }
 
+    fun showHint() {
+        gameState?.let { state ->
+            val move = computeNextMove(state)
+            hintMessage = move ?: "No solution found"
+        }
+    }
     fun startGame() {
         if (presets.isNotEmpty()) {
             loadLevel(currentLevelIndex)
@@ -94,8 +103,88 @@ class WaterJugViewModel : ViewModel() {
 
             updateState(newLevels)
         }
+
     }
 
+    private data class Node(
+        val levels: List<Int>,
+        val path: List<String>
+    )
+
+    private fun computeNextMove(state: GameState): String? {
+
+        val visited = mutableSetOf<List<Int>>()
+        val queue = ArrayDeque<Node>()
+
+        queue.add(Node(state.currentLevels, emptyList()))
+
+        while (queue.isNotEmpty()) {
+
+            val current = queue.removeFirst()
+
+            if (current.levels.any { it == state.target }) {
+                return current.path.firstOrNull()
+            }
+
+            if (current.levels in visited) continue
+            visited.add(current.levels)
+
+            val capacities = state.capacities
+
+            for (i in capacities.indices) {
+
+                // Fill
+                if (current.levels[i] < capacities[i]) {
+                    val newLevels = current.levels.toMutableList()
+                    newLevels[i] = capacities[i]
+                    queue.add(
+                        Node(
+                            newLevels,
+                            current.path + "Fill Jug ${i + 1}"
+                        )
+                    )
+                }
+
+                // Empty
+                if (current.levels[i] > 0) {
+                    val newLevels = current.levels.toMutableList()
+                    newLevels[i] = 0
+                    queue.add(
+                        Node(
+                            newLevels,
+                            current.path + "Empty Jug ${i + 1}"
+                        )
+                    )
+                }
+
+                // Pour
+                for (j in capacities.indices) {
+                    if (i == j) continue
+
+                    val newLevels = current.levels.toMutableList()
+
+                    val amount = minOf(
+                        newLevels[i],
+                        capacities[j] - newLevels[j]
+                    )
+
+                    if (amount > 0) {
+                        newLevels[i] -= amount
+                        newLevels[j] += amount
+
+                        queue.add(
+                            Node(
+                                newLevels,
+                                current.path + "Pour Jug ${i + 1} → Jug ${j + 1}"
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
+        return null
+    }
     fun pour(from: Int, to: Int) {
         gameState?.let { state ->
 
