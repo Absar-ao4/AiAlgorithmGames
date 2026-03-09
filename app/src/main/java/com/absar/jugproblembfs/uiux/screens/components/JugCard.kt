@@ -10,30 +10,41 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun JugCard(
+    label: String,
     capacity: Int,
     current: Int,
     onFill: () -> Unit,
     onEmpty: () -> Unit
 ) {
 
-    val fillRatio = if (capacity == 0) 0f else current.toFloat() / capacity.toFloat()
+    val fillRatio =
+        if (capacity == 0) 0f else current.toFloat() / capacity.toFloat()
 
-    val animatedFill = animateFloatAsState(targetValue = fillRatio)
+    val animatedFill = animateFloatAsState(fillRatio)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // Jug Container
+        Text(
+            text = label,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
         Box(
             modifier = Modifier
-                .width(80.dp)
-                .height(160.dp)
+                .width(70.dp)
+                .height(150.dp)
                 .background(
                     color = Color.White.copy(alpha = 0.15f),
                     shape = RoundedCornerShape(16.dp)
@@ -41,7 +52,6 @@ fun JugCard(
             contentAlignment = Alignment.BottomCenter
         ) {
 
-            // Water Fill
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -57,46 +67,32 @@ fun JugCard(
                     )
             )
 
-            // Level Text inside jug
             Text(
                 text = "$current / $capacity",
-                color = Color.White,
-                fontSize = 14.sp,
-                modifier = Modifier.align(Alignment.Center)
+                color = Color.White
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Button(
+            onClick = onFill,
+            modifier = Modifier
+                .width(70.dp)
+                .height(34.dp)
         ) {
+            Text("Fill", fontSize = 11.sp)
+        }
 
-            Button(
-                onClick = onFill,
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF29B6F6),
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp),
-                modifier = Modifier.height(36.dp)
-            ) {
-                Text("Fill", fontSize = 12.sp)
-            }
+        Spacer(modifier = Modifier.height(6.dp))
 
-            Button(
-                onClick = onEmpty,
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFE53935),
-                    contentColor = Color.White
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp),
-                modifier = Modifier.height(36.dp)
-            ) {
-                Text("Empty", fontSize = 12.sp)
-            }
+        Button(
+            onClick = onEmpty,
+            modifier = Modifier
+                .width(70.dp)
+                .height(34.dp)
+        ) {
+            Text("Empty", fontSize = 11.sp)
         }
     }
 }

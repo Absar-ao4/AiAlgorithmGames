@@ -5,8 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.NavigateBefore
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,15 +23,17 @@ import com.absar.jugproblembfs.uiux.screens.components.JugCard
 @Composable
 fun GameScreen(
     viewModel: WaterJugViewModel,
-    onBackClick: () -> Unit   // 🔥 added
+    onBackClick: () -> Unit
 ) {
 
     val state = viewModel.gameState ?: return
 
-    var fromIndex by remember(state.capacities.size) { mutableStateOf(0) }
-    var toIndex by remember(state.capacities.size) {
-        mutableStateOf(if (state.capacities.size > 1) 1 else 0)
-    }
+    var fromIndex by remember { mutableStateOf(0) }
+    var toIndex by remember { mutableStateOf(1) }
+
+    var pourDirection by remember { mutableStateOf(true) }
+
+    val labels = listOf("Jug 1","Jug 2","Jug 3")
 
     Box(
         modifier = Modifier
@@ -50,33 +52,31 @@ fun GameScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp)
+                .padding(24.dp)
         ) {
 
-            // 🔥 NEW TOP BAR
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
 
                 IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.ArrowBack,"", tint = Color.White)
                 }
 
+                Spacer(modifier = Modifier.weight(1f))
+
                 Text(
-                    text = "Level ${state.level}",
+                    "Level ${state.level}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
 
+                Spacer(modifier = Modifier.weight(1f))
+
                 Text(
-                    text = "Moves: ${state.moves}",
+                    "Moves: ${state.moves}",
                     fontSize = 18.sp,
                     color = Color.White
                 )
@@ -84,11 +84,11 @@ fun GameScreen(
 
             Spacer(Modifier.height(12.dp))
 
-            // ORIGINAL HEADER (unchanged)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
+
                 Text(
                     text = "🎯 Target: ${state.target}",
                     fontSize = 20.sp,
@@ -96,22 +96,48 @@ fun GameScreen(
                     color = Color.White
                 )
 
-                Text(
-                    text = "",
-                    fontSize = 18.sp,
-                    color = Color.White
-                )
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    onClick = { viewModel.showHint() },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("💡 Hint")
+                }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Jugs Row (unchanged)
+            viewModel.hintMessage?.let {
+
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF37474F)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+
+                    Text(
+                        text = it,
+                        modifier = Modifier.padding(12.dp),
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+
                 state.capacities.indices.forEach { index ->
+
                     JugCard(
+                        label = labels[index],
                         capacity = state.capacities[index],
                         current = state.currentLevels[index],
                         onFill = { viewModel.fill(index) },
@@ -120,104 +146,98 @@ fun GameScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            // Pour Section (UNCHANGED)
-            Card(
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF1E3A5F)
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
+            if(state.capacities.size == 2){
+
+                val from = if(pourDirection) 0 else 1
+                val to = if(pourDirection) 1 else 0
+
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
 
-                    Text(
-                        "Pour Water",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
-                        DropdownSelector(
-                            label = "From",
-                            options = state.capacities.indices.toList(),
-                            selectedIndex = fromIndex,
-                            onSelect = { fromIndex = it },
-                            modifier = Modifier.weight(1f)
-                        )
+                        Text("Pour Direction")
 
-                        DropdownSelector(
-                            label = "To",
-                            options = state.capacities.indices.toList(),
-                            selectedIndex = toIndex,
-                            onSelect = { toIndex = it },
-                            modifier = Modifier.weight(1f)
-                        )
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { pourDirection = !pourDirection }
+                        ) {
+                            Text(
+                                if(pourDirection)
+                                    "Jug 1 → Jug 2"
+                                else
+                                    "Jug 2 → Jug 1"
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { viewModel.pour(from,to) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("POUR")
+                        }
                     }
+                }
+            }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+            if(state.capacities.size == 3){
 
-                    Button(
-                        onClick = { viewModel.pour(fromIndex, toIndex) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        enabled =
-                            fromIndex != toIndex &&
-                                    state.currentLevels[fromIndex] > 0 &&
-                                    state.currentLevels[toIndex] < state.capacities[toIndex],
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = "POUR",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp)
+                ){
+
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ){
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ){
+
+                            DropdownSelector(
+                                label = "From",
+                                options = state.capacities.indices.toList(),
+                                selectedIndex = fromIndex,
+                                onSelect = { fromIndex = it },
+                                modifier = Modifier.weight(1f),
+                                displayText = { "Jug ${it + 1}" }
+                            )
+
+                            DropdownSelector(
+                                label = "To",
+                                options = state.capacities.indices.toList(),
+                                selectedIndex = toIndex,
+                                onSelect = { toIndex = it },
+                                modifier = Modifier.weight(1f),
+                                displayText = { "Jug ${it + 1}" }
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { viewModel.pour(fromIndex,toIndex) },
+                            modifier = Modifier.fillMaxWidth()
+                        ){
+                            Text("POUR")
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            Button(
-                onClick = { viewModel.showHint() },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("💡 Get Hint")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            viewModel.hintMessage?.let {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF37474F)
-                    ),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text(
-                        text = it,
-                        modifier = Modifier.padding(16.dp),
-                        color = Color.White
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // 🔥 NEW LEVEL NAVIGATION ROW
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -225,34 +245,31 @@ fun GameScreen(
 
                 Button(
                     onClick = { viewModel.previousLevel() },
-                    enabled = state.level > 1,
-                    shape = RoundedCornerShape(14.dp)
+                    enabled = state.level > 1
                 ) {
-                    Icon(Icons.Default.NavigateBefore, contentDescription = null)
-                    Spacer(Modifier.width(6.dp))
+                    Icon(Icons.Default.NavigateBefore,null)
                     Text("Prev")
                 }
 
                 Button(
-                    onClick = { viewModel.nextLevel() },
-                    shape = RoundedCornerShape(14.dp)
+                    onClick = { viewModel.nextLevel() }
                 ) {
                     Text("Next")
-                    Spacer(Modifier.width(6.dp))
-                    Icon(Icons.Default.ArrowForward, contentDescription = null)
+                    Icon(Icons.Default.ArrowForward,null)
                 }
             }
 
-            if (state.isSolved) {
+            if(state.isSolved){
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFF2E7D32)
                     ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+
                     Box(
                         modifier = Modifier.padding(18.dp),
                         contentAlignment = Alignment.Center
@@ -260,8 +277,7 @@ fun GameScreen(
                         Text(
                             "🎉 Puzzle Solved!",
                             color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 18.sp
                         )
                     }
                 }
